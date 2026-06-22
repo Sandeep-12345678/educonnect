@@ -150,6 +150,8 @@ router.get('/consent/status', authMiddleware, (req, res) => {
 
 // Get available platforms
 router.get('/platforms', authMiddleware, (req, res) => {
+  const isAdult = req.user.role === 'verified_adult';
+  
   const connections = db.prepare(
     'SELECT platform, status FROM social_connections WHERE user_id = ?'
   ).all(req.user.id);
@@ -159,11 +161,12 @@ router.get('/platforms', authMiddleware, (req, res) => {
 
   const platforms = AVAILABLE_PLATFORMS.map(p => ({
     ...p,
-    connected: !!connectedMap[p.id],
-    status: connectedMap[p.id] || null
+    connected: !!connectedMap[p.id] || isAdult,
+    status: connectedMap[p.id] || (isAdult ? 'approved' : null),
+    auto_approved: isAdult && !connectedMap[p.id]
   }));
 
-  res.json({ platforms });
+  res.json({ platforms, is_adult: isAdult });
 });
 
 // Get user's connections

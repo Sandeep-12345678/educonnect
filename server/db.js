@@ -11,11 +11,14 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'student' CHECK(role IN ('student','moderator','admin')),
+    password_hash TEXT,
+    google_id TEXT UNIQUE DEFAULT NULL,
+    role TEXT DEFAULT 'student' CHECK(role IN ('student','verified_adult','moderator','admin')),
     avatar TEXT DEFAULT NULL,
     screen_time_limit_min INTEGER DEFAULT 120,
     is_restricted INTEGER DEFAULT 0,
+    age_verified INTEGER DEFAULT 0,
+    age_verification_method TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 

@@ -29,6 +29,12 @@ function filterText(text) {
 }
 
 function contentFilter(req, res, next) {
+  // Skip filtering for verified adults
+  if (req.user && req.user.role === 'verified_adult') {
+    req.contentFlagged = false;
+    return next();
+  }
+  
   if (req.body && req.body.content) {
     const result = filterText(req.body.content);
     req.body.content = result.filtered;

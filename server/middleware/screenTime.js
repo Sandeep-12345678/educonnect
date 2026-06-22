@@ -58,8 +58,13 @@ function getTodayUsage(userId) {
 }
 
 function checkLimit(userId) {
-  const user = db.prepare('SELECT screen_time_limit_min FROM users WHERE id = ?').get(userId);
+  const user = db.prepare('SELECT screen_time_limit_min, role FROM users WHERE id = ?').get(userId);
   if (!user) return { exceeded: false, usage: 0, limit: 0 };
+  
+  // Verified adults have unlimited screen time
+  if (user.role === 'verified_adult') {
+    return { exceeded: false, usage: 0, limit: Infinity, remaining: Infinity, is_adult: true };
+  }
   
   const usage = getTodayUsage(userId);
   const limit = user.screen_time_limit_min;

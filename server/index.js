@@ -44,6 +44,7 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/screen-time', require('./routes/screenTime'));
 app.use('/api/social', require('./routes/social'));
+app.use('/api/verify', require('./routes/verify'));
 
 // Serve client in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
@@ -95,7 +96,8 @@ io.on('connection', (socket) => {
     if (!socket.userId) return callback?.({ error: 'Not authenticated' });
     if (isRestricted(socket.userId)) return callback?.({ error: 'Account restricted' });
 
-    const filtered = contentFilterContent(content);
+    const isAdult = isAdultUser(socket.userId);
+    const filtered = isAdult ? { filtered: content, flagged: false } : contentFilterContent(content);
     
     const result = db.prepare(
       'INSERT INTO messages (sender_id, room, content) VALUES (?, ?, ?)'
@@ -119,7 +121,8 @@ io.on('connection', (socket) => {
     if (!socket.userId) return callback?.({ error: 'Not authenticated' });
     if (isRestricted(socket.userId)) return callback?.({ error: 'Account restricted' });
 
-    const filtered = contentFilterContent(content);
+    const isAdult = isAdultUser(socket.userId);
+    const filtered = isAdult ? { filtered: content, flagged: false } : contentFilterContent(content);
 
     const result = db.prepare(
       'INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)'
@@ -221,6 +224,11 @@ io.on('connection', (socket) => {
 function isRestricted(userId) {
   const user = db.prepare('SELECT is_restricted FROM users WHERE id = ?').get(userId);
   return user?.is_restricted === 1;
+}
+
+function isAdultUser(userId) {
+  const user = db.prepare('SELECT role FROM users WHERE id = ?').get(userId);
+  return user?.role === 'verified_adult';
 }
 
 const { filterText } = require('./middleware/contentFilter');

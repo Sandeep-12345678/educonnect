@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import GoogleSignIn from './GoogleSignIn';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -80,6 +81,14 @@ export default function Register() {
         <p className="footer-text">
           Already a student? <Link to="/login">Log in</Link>
         </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+
+        <GoogleSignIn />
       </div>
     </div>
   );

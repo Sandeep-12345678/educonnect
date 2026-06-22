@@ -7,6 +7,7 @@ import Feed from './components/Feed';
 import Chat from './components/Chat';
 import ScreenTime from './components/ScreenTime';
 import SocialConnect from './components/SocialConnect';
+import AgeVerification from './components/AgeVerification';
 import AdminPanel from './components/AdminPanel';
 import Navbar from './components/Navbar';
 
@@ -37,6 +38,7 @@ function AppLayout() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/screen-time" element={<ScreenTime />} />
             <Route path="/social" element={<SocialConnect />} />
+            <Route path="/verify" element={<AgeVerification />} />
             <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Routes>
         </main>
