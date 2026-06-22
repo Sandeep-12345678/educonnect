@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: educonnect
+    env: node
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install
+    startCommand: cd server && node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: JWT_SECRET
+        generateValue: true
+    plan: free
+    autoDeploy: true
