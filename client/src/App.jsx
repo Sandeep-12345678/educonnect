@@ -12,6 +12,8 @@ import TwoFactorAuth from './components/TwoFactorAuth';
 import AdminPanel from './components/AdminPanel';
 import Navbar from './components/Navbar';
 
+import OAuthCallback from './components/OAuthCallback';
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-spinner"><div className="spinner" /></div>;
@@ -56,6 +58,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/:provider/callback" element={<OAuthCallback />} />
           <Route path="/*" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>

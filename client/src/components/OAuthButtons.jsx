@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
-const PROVIDER_CONFIG = {
+const PROVIDER_UI = {
   google: {
     name: 'Google',
     icon: (
@@ -35,7 +34,7 @@ const PROVIDER_CONFIG = {
       </svg>
     ),
     bgColor: '#000000',
-    bgHover: '#1a1a1a'
+    bgHover: '#333333'
   },
   microsoft: {
     name: 'Microsoft',
@@ -62,67 +61,159 @@ const PROVIDER_CONFIG = {
   }
 };
 
-export default function OAuthButtons({ onSuccess, showAll = false }) {
-  const { googleLogin } = useAuth();
+export default function OAuthButtons({ showAll = false }) {
   const navigate = useNavigate();
   const [loadingProvider, setLoadingProvider] = useState(null);
+  const [providersConfigured, setProvidersConfigured] = useState({});
+  const googleBtnRef = useRef(null);
 
-  const handleOAuth = async (provider) => {
-    setLoadingProvider(provider);
-    const config = PROVIDER_CONFIG[provider];
+  // Fetch which providers are configured
+  useEffect(() => {
+    api.get('/oauth/providers').then(res => {
+      const configured = {};
+      (res.data.providers || []).forEach(p => {
+        configured[p.id] = { configured: p.configured, flow: p.flow };
+      });
+      setProvidersConfigured(configured);
+    }).catch(() => {});
+  }, []);
 
-    // In production: integrate with the real OAuth SDK for each provider
-    // Google → google.accounts.id
-    // GitHub → window.location redirect to GitHub OAuth
-    // Apple → AppleJS SDK
-    // etc.
+  // ====== Google One-Tap / Sign-In ======
+  useEffect(() => {
+    // Load Google Identity Services
+    const scriptId = 'google-gis-script';
+    if (document.getElementById(scriptId)) return;
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = initGoogle;
+    document.head.appendChild(script);
+
+    return () => {
+      // Don't remove on unmount - might be needed elsewhere
+    };
+  }, []);
+
+  const initGoogle = () => {
+    if (!window.google?.accounts?.id) return;
     
-    // Dev/demo flow:
-    const email = prompt(`Enter your ${config.name} email:`, `${provider}@email.com`);
-    if (!email) { setLoadingProvider(null); return; }
-    
-    const name = prompt(`Enter your display name:`, '');
-    if (!name) { setLoadingProvider(null); return; }
-
-    try {
-      const oauthData = {
-        provider,
-        provider_id: `${provider}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        email,
-        name,
-        picture: null
-      };
-
-      const res = await api.post('/oauth', oauthData);
-      
-      // Save token and user
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      
-      // Reload to trigger auth context update
-      window.location.href = '/';
-      
-      onSuccess?.();
-    } catch (err) {
-      alert(`${config.name} sign-in failed: ${err.response?.data?.error || 'Please try again'}`);
-    }
-    setLoadingProvider(null);
+    window.google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+      callback: handleGoogleResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
   };
 
-  // Default: show Google, GitHub, Apple. showAll adds Microsoft + Discord
-  const providers = showAll 
-    ? Object.keys(PROVIDER_CONFIG)
+  const handleGoogleResponse = async (response) => {
+    setLoadingProvider('google');
+    try {
+      const res = await api.post('/oauth/google/verify', { credential: response.credential });
+      saveAndRedirect(res.data);
+    } catch (err) {
+      alert('Google sign-in failed: ' + (err.response?.data?.error || 'Please try again'));
+      setLoadingProvider(null);
+    }
+  };
+
+  const handleGoogleClick = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // One-tap not available, try showing the button directly
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            width: '400'
+          });
+        }
+      });
+    }
+  };
+
+  // ====== Apple Sign In ======
+  useEffect(() => {
+    const scriptId = 'appleid-script';
+    if (document.getElementById(scriptId)) return;
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }, []);
+
+  const handleAppleClick = async () => {
+    setLoadingProvider('apple');
+    try {
+      if (window.AppleID) {
+        window.AppleID.auth.init({
+          clientId: import.meta.env.VITE_APPLE_CLIENT_ID || 'com.educonnect.signin',
+          scope: 'name email',
+          redirectURI: window.location.origin + '/auth/apple/callback',
+          usePopup: true
+        });
+
+        const response = await window.AppleID.auth.signIn();
+        const res = await api.post('/oauth/apple/verify', {
+          identityToken: response.authorization?.id_token,
+          user: response.user
+        });
+        saveAndRedirect(res.data);
+      }
+    } catch (err) {
+      alert('Apple sign-in failed: ' + (err.response?.data?.error || err.message || 'Please try again'));
+      setLoadingProvider(null);
+    }
+  };
+
+  // ====== Redirect-based (GitHub, Microsoft, Discord) ======
+  const handleRedirectLogin = async (provider) => {
+    setLoadingProvider(provider);
+    try {
+      const res = await api.get(`/oauth/url/${provider}`);
+      window.location.href = res.data.url;
+    } catch (err) {
+      alert(`${PROVIDER_UI[provider]?.name} OAuth not configured. Add credentials to server .env.`);
+      setLoadingProvider(null);
+    }
+  };
+
+  const saveAndRedirect = (data) => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    window.location.href = '/';
+  };
+
+  // Determine which providers to show
+  const displayProviders = showAll 
+    ? Object.keys(PROVIDER_UI)
     : ['google', 'github', 'apple'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {providers.map(provider => {
-        const config = PROVIDER_CONFIG[provider];
+      {displayProviders.map(provider => {
+        const config = PROVIDER_UI[provider];
+        if (!config) return null;
+
+        const handleClick = () => {
+          if (provider === 'google') handleGoogleClick();
+          else if (provider === 'apple') handleAppleClick();
+          else handleRedirectLogin(provider);
+        };
+
         return (
           <button
             key={provider}
             type="button"
-            onClick={() => handleOAuth(provider)}
+            onClick={handleClick}
             disabled={loadingProvider !== null}
             style={{
               width: '100%',
@@ -145,13 +236,13 @@ export default function OAuthButtons({ onSuccess, showAll = false }) {
             onMouseLeave={e => { e.currentTarget.style.background = config.bgColor; e.currentTarget.style.transform = 'none'; }}
           >
             {config.icon}
-            {loadingProvider === provider 
-              ? 'Signing in...' 
-              : `Continue with ${config.name}`
-            }
+            {loadingProvider === provider ? 'Signing in...' : `Continue with ${config.name}`}
           </button>
         );
       })}
+
+      {/* Hidden Google button container */}
+      <div ref={googleBtnRef} style={{ display: 'none' }} />
     </div>
   );
 }
