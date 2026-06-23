@@ -11,10 +11,6 @@ const PROVIDER_UI = {
     name: 'GitHub', flow: 'redirect',
     icon: '🐙', bgColor: '#24292e', bgHover: '#1a1f23'
   },
-  apple: {
-    name: 'Apple', flow: 'popup',
-    icon: '🍎', bgColor: '#000000', bgHover: '#333333'
-  },
   microsoft: {
     name: 'Microsoft', flow: 'redirect',
     icon: '🪟', bgColor: '#2F2F2F', bgHover: '#1a1a1a'
@@ -48,16 +44,6 @@ export default function OAuthButtons({ showAll = false }) {
     document.head.appendChild(s);
   }, []);
 
-  // Load Apple SDK
-  useEffect(() => {
-    if (document.getElementById('apple-script')) return;
-    const s = document.createElement('script');
-    s.id = 'apple-script';
-    s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
-    s.async = true; s.defer = true;
-    document.head.appendChild(s);
-  }, []);
-
   const handleGoogle = async () => {
     if (!configStatus.google) {
       setDemoModal({ provider: 'google', config: PROVIDER_UI.google });
@@ -79,27 +65,6 @@ export default function OAuthButtons({ showAll = false }) {
         auto_select: false, cancel_on_tap_outside: true
       });
       window.google.accounts.id.prompt();
-    } catch { setLoadingProvider(null); }
-  };
-
-  const handleApple = async () => {
-    if (!configStatus.apple) {
-      setDemoModal({ provider: 'apple', config: PROVIDER_UI.apple });
-      return;
-    }
-    setLoadingProvider('apple');
-    try {
-      await new Promise(r => setTimeout(r, 1000));
-      window.AppleID.auth.init({
-        clientId: import.meta.env.VITE_APPLE_CLIENT_ID || 'com.educonnect.signin',
-        scope: 'name email',
-        redirectURI: window.location.origin + '/auth/apple/callback',
-        usePopup: true
-      });
-      const resp = await window.AppleID.auth.signIn();
-      const res = await api.post('/oauth/apple/verify', { identityToken: resp.authorization?.id_token, user: resp.user });
-      setLoadingProvider(null);
-      loginSuccess(res.data);
     } catch { setLoadingProvider(null); }
   };
 
@@ -125,11 +90,10 @@ export default function OAuthButtons({ showAll = false }) {
 
   const handleClick = (provider) => {
     if (provider === 'google') handleGoogle();
-    else if (provider === 'apple') handleApple();
     else handleRedirect(provider);
   };
 
-  const displayProviders = showAll ? Object.keys(PROVIDER_UI) : ['google', 'github', 'apple'];
+  const displayProviders = showAll ? Object.keys(PROVIDER_UI) : ['google', 'github'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

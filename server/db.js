@@ -17,6 +17,8 @@ db.exec(`
     apple_id TEXT UNIQUE DEFAULT NULL,
     microsoft_id TEXT UNIQUE DEFAULT NULL,
     discord_id TEXT UNIQUE DEFAULT NULL,
+    phone TEXT DEFAULT NULL,
+    phone_verified INTEGER DEFAULT 0,
     totp_secret TEXT DEFAULT NULL,
     totp_enabled INTEGER DEFAULT 0,
     role TEXT DEFAULT 'student' CHECK(role IN ('student','verified_adult','moderator','admin')),
@@ -158,6 +160,18 @@ db.exec(`
     used_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS verification_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    email TEXT,
+    phone TEXT,
+    code TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('email_login','email_reset','phone_login','phone_verify')),
+    used INTEGER DEFAULT 0,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
