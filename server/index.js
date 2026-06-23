@@ -39,6 +39,7 @@ const authLimiter = rateLimit({
 
 // Routes
 app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/oauth', require('./routes/oauth'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/admin', require('./routes/admin'));

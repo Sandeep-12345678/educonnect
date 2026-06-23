@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import GoogleSignIn from './GoogleSignIn';
+import OAuthButtons from './OAuthButtons';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -70,7 +70,7 @@ export default function Login() {
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
-        <GoogleSignIn />
+        <OAuthButtons />
       </div>
     </div>
   );
