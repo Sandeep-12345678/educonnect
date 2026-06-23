@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { generateToken, authMiddleware } = require('../middleware/auth');
+const { generateToken, authMiddleware, JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -50,6 +50,21 @@ router.post('/login', (req, res) => {
 
   if (user.is_restricted) {
     return res.status(403).json({ error: 'Account restricted. Contact an admin.' });
+  }
+
+  // Check if 2FA is enabled - require TOTP verification
+  if (user.totp_enabled) {
+    const jwt = require('jsonwebtoken');
+    const tempToken = jwt.sign(
+      { userId: user.id, type: 'totp_verify' },
+      JWT_SECRET + '_totp',
+      { expiresIn: '5m' }
+    );
+    return res.json({
+      requires_2fa: true,
+      temp_token: tempToken,
+      message: 'Enter the 6-digit code from your authenticator app.'
+    });
   }
 
   const token = generateToken(user);

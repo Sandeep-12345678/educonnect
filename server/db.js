@@ -17,6 +17,8 @@ db.exec(`
     apple_id TEXT UNIQUE DEFAULT NULL,
     microsoft_id TEXT UNIQUE DEFAULT NULL,
     discord_id TEXT UNIQUE DEFAULT NULL,
+    totp_secret TEXT DEFAULT NULL,
+    totp_enabled INTEGER DEFAULT 0,
     role TEXT DEFAULT 'student' CHECK(role IN ('student','verified_adult','moderator','admin')),
     avatar TEXT DEFAULT NULL,
     screen_time_limit_min INTEGER DEFAULT 120,
@@ -145,6 +147,16 @@ db.exec(`
     status TEXT DEFAULT 'pending' CHECK(status IN ('pending','shared','failed')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS totp_backup_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    used_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 

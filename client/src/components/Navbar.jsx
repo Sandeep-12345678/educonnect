@@ -28,6 +28,9 @@ export default function Navbar() {
         <NavLink to="/verify">
           <span className="nav-icon">🔞</span> Adult Access
         </NavLink>
+        <NavLink to="/security">
+          <span className="nav-icon">🔐</span> Security
+        </NavLink>
         {(user?.role === 'admin' || user?.role === 'moderator') && (
           <NavLink to="/admin">
             <span className="nav-icon">🛡️</span> Admin Panel

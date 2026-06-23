@@ -46,6 +46,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/screen-time', require('./routes/screenTime'));
 app.use('/api/social', require('./routes/social'));
 app.use('/api/verify', require('./routes/verify'));
+app.use('/api/totp', require('./routes/totp'));
 
 // Serve client in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
