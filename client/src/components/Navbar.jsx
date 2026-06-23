@@ -31,6 +31,9 @@ export default function Navbar() {
         <NavLink to="/security">
           <span className="nav-icon">🔐</span> Security
         </NavLink>
+        <NavLink to="/ai">
+          <span className="nav-icon">🤖</span> AI Assistant
+        </NavLink>
         {(user?.role === 'admin' || user?.role === 'moderator') && (
           <NavLink to="/admin">
             <span className="nav-icon">🛡️</span> Admin Panel

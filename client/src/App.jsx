@@ -9,6 +9,7 @@ import ScreenTime from './components/ScreenTime';
 import SocialConnect from './components/SocialConnect';
 import AgeVerification from './components/AgeVerification';
 import TwoFactorAuth from './components/TwoFactorAuth';
+import AIChat from './components/AIChat';
 import AdminPanel from './components/AdminPanel';
 import Navbar from './components/Navbar';
 
@@ -43,6 +44,7 @@ function AppLayout() {
             <Route path="/social" element={<SocialConnect />} />
             <Route path="/verify" element={<AgeVerification />} />
             <Route path="/security" element={<TwoFactorAuth />} />
+            <Route path="/ai" element={<AIChat />} />
             <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Routes>
         </main>

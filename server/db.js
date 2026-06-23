@@ -174,6 +174,15 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS ai_chats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
   CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room);

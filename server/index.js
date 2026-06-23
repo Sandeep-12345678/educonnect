@@ -48,6 +48,7 @@ app.use('/api/social', require('./routes/social'));
 app.use('/api/verify', require('./routes/verify'));
 app.use('/api/totp', require('./routes/totp'));
 app.use('/api/passcode', require('./routes/passcode'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Serve client in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
